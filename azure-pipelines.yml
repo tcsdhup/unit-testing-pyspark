@@ -73,7 +73,7 @@ stages:
           - task: UsePythonVersion@0
             displayName: 'Use Python 3.x'
             inputs:
-              versionSpec: 3.7.5
+              versionSpec: 3.6.10
 
           - script: 'python -m pip install --upgrade pip && pip install -r $(System.DefaultWorkingDirectory)/requirements.txt'
             displayName: 'Install dependencies'
