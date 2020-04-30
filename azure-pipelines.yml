@@ -22,11 +22,11 @@ stages:
         displayName: Static Code Analysis
 
         steps:
-          - bash: |
-              set -x
-              mkdir -p "$(Build.ArtifactStagingDirectory)/$(artifact_dir)"
-              cp -r *.py requirements.txt "$(Build.ArtifactStagingDirectory)/$(artifact_dir)/"
-            displayName: 'Include apps code to Build Artifacts'
+#          - bash: |
+#              set -x
+#              mkdir -p "$(Build.ArtifactStagingDirectory)/$(artifact_dir)"
+#              cp -r *.py requirements.txt "$(Build.ArtifactStagingDirectory)/$(artifact_dir)/"
+#            displayName: 'Include apps code to Build Artifacts'
           - task: UsePythonVersion@0
             displayName: 'Use Python 3.x'
 
