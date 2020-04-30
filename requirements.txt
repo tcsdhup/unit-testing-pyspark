@@ -6,3 +6,4 @@ bandit
 pyspark
 pandas
 numpy
+pytest-spark
