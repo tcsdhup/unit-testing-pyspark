@@ -1,5 +1,5 @@
 from pytest_spark import spark_context
-from word_count_function import word_count
+from wordcount.word_count_function import word_count
 
 def test_word_count_function(spark_context):
     counts = word_count(spark_context.parallelize(list("Hello World")))

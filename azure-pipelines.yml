@@ -19,15 +19,18 @@ stages:
     displayName: Static Code Analysis
     jobs:
       - job: Analysis
-        displayName: Static Code Analysis
+        displayName: Static Code Analysis and Unit Tests
 
         steps:
-#          - bash: |
-#              set -x
-#              mkdir -p "$(Build.ArtifactStagingDirectory)/$(artifact_dir)"
-#              cp -r *.py requirements.txt "$(Build.ArtifactStagingDirectory)/$(artifact_dir)/"
-#            displayName: 'Include apps code to Build Artifacts'
+          - bash: |
+              set -x
+              mkdir -p "$(Build.ArtifactStagingDirectory)/$(artifact_dir)"
+              cp -r *.py requirements.txt "$(Build.ArtifactStagingDirectory)/$(artifact_dir)/"
+            displayName: 'Include apps code to Build Artifacts'
+
           - task: UsePythonVersion@0
+            inputs:
+              versionSpec: 3.6.10
             displayName: 'Use Python 3.x'
 
           - bash: |
@@ -37,25 +40,24 @@ stages:
               cd $(Build.ArtifactStagingDirectory)/$(artifact_dir)/
               pip install -r requirements.txt
             displayName: 'create virtual env and install dependencies'
+
           - bash: |
-              pwd
+              set -x
               . $(Build.ArtifactStagingDirectory)/venv/bin/activate
-              #cd $(Build.ArtifactStagingDirectory)/$(artifact_dir)/
-              flake8 --exclude=venv* --statistics
+              flake8 --exclude=venv* --statistics $(Build.ArtifactStagingDirectory)/$(artifact_dir)
+
             displayName: 'Code Analysis using Lint'
             continueOnError: true
+
           - bash: |
               set -x
               . $(Build.ArtifactStagingDirectory)/venv/bin/activate
               black $(Build.ArtifactStagingDirectory)/$(artifact_dir)
-              flake8 --exclude=venv* --statistics
+              flake8 --exclude=venv* --statistics $(Build.ArtifactStagingDirectory)/$(artifact_dir)
             displayName: 'Formatting the code using black'
             continueOnError: true
-          #          - bash: |
-          #              set -x
-          #              . $(Build.ArtifactStagingDirectory)/venv/bin/activate
-          #              pytest -v --cov=$(project_name)
-          #            displayName: 'Unit Tests run using pytest'
+
+
 
 
           - bash: |
@@ -64,24 +66,16 @@ stages:
               bandit -r $(Build.ArtifactStagingDirectory)/$(artifact_dir)
             displayName: 'Testing for Security Flaws in the Application using bandit'
             continueOnError: true
-      - job: 'ParallelTesting'
-        displayName: 'Run Unit Tests'
-        strategy:
-          parallel: 1
 
-        steps:
-          - task: UsePythonVersion@0
-            displayName: 'Use Python 3.x'
-            inputs:
-              versionSpec: 3.6.10
 
-          - script: 'python -m pip install --upgrade pip && pip install -r $(System.DefaultWorkingDirectory)/requirements.txt'
-            displayName: 'Install dependencies'
+
 
           - script: |
-              pytest $(System.DefaultWorkingDirectory)/ --doctest-modules --junitxml=junit/test-results.xml
+              . $(Build.ArtifactStagingDirectory)/venv/bin/activate
+              pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=xml --cov-report=html --cov-fail-under=$(python_coverage_threshold)
             displayName: 'pytest'
             continueOnError: true
+
           - task: PublishTestResults@2
             displayName: 'Publish Test Results **/test-results.xml'
             inputs:
@@ -89,18 +83,16 @@ stages:
               testRunTitle: 'Python $(python.version)'
             condition: succeededOrFailed()
 
-          - script: |
-              set -x
-              pwd
-              echo $(System.DefaultWorkingDirectory)
-              ls $(System.DefaultWorkingDirectory)
-              ls -la
-              pytest --cov=$(System.DefaultWorkingDirectory)/ $(System.DefaultWorkingDirectory)/ --cov-fail-under=$(python_coverage_threshold) --cov-report=html:$(System.DefaultWorkingDirectory)/coverage_report
-              ls $(System.DefaultWorkingDirectory)
-            displayName: 'Generate code coverage'
-            continueOnError: true
+
           - task: PublishCodeCoverageResults@1
             displayName: 'Publish code coverage from pytest-cov'
             inputs:
               codeCoverageTool: Cobertura
-              summaryFileLocation: $(System.DefaultWorkingDirectory)/coverage_report/index.html
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+              failIfCoverageEmpty: false
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Build Artifacts
+            inputs:
+              pathtoPublish: '$(Build.ArtifactStagingDirectory)/$(artifact_dir)'
+              artifactName: 'drop'
