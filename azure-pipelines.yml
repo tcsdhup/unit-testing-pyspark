@@ -25,7 +25,7 @@ stages:
           - bash: |
               set -x
               mkdir -p "$(Build.ArtifactStagingDirectory)/$(artifact_dir)"
-              cp -r *.py requirements.txt "$(Build.ArtifactStagingDirectory)/$(artifact_dir)/"
+              cp -r * requirements.txt "$(Build.ArtifactStagingDirectory)/$(artifact_dir)/"
             displayName: 'Include apps code to Build Artifacts'
 
           - task: UsePythonVersion@0
